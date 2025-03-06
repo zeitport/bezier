@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bezier Curve Demonstration</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --accent-color: #e74c3c;
+            --text-color: #333;
+            --bg-color: #f9f9f9;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .canvas-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        canvas {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        .info-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        .formula {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        
+        .point {
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+        
+        .interactive-note {
+            font-style: italic;
+            margin-top: 15px;
+            color: #666;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Bezier Curve Demonstration</h1>
+        <p>An interactive visualization of how Bezier curves work</p>
+    </header>
+    
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="bezierCanvas" height="400"></canvas>
+            
+            <div class="controls">
+                <button id="animateBtn">Animate Drawing</button>
+                <button id="resetBtn">Reset</button>
+                <select id="curveType">
+                    <option value="quadratic">Quadratic Bezier</option>
+                    <option value="cubic">Cubic Bezier</option>
+                </select>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: blue;"></div>
+                    <span>Start/End Points</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: red;"></div>
+                    <span>Control Points</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: green;"></div>
+                    <span>Bezier Curve</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgba(128, 128, 128, 0.5);"></div>
+                    <span>Construction Lines</span>
+                </div>
+            </div>
+            
+            <p class="interactive-note">Drag the points to modify the curve. The animation shows how the curve is constructed.</p>
+            
+            <h3>Magic Missile Game</h3>
+            <p>Below is a game animation showing how Bezier curves can be used for game mechanics like projectile paths.</p>
+            <canvas id="gameCanvas" height="300"></canvas>
+        </div>
+        
+        <div class="info-container">
+            <h2>What is a Bezier Curve?</h2>
+            <p>
+                Bezier curves are parametric curves frequently used in computer graphics and related fields. They were 
+                widely publicized in 1962 by French engineer Pierre Bézier, who used them to design automobile bodies at Renault.
+            </p>
+            
+            <p>
+                These curves are defined by control points, which determine the shape of the curve. The curve starts at the 
+                first control point and ends at the last control point, while the intermediate control points act as "magnets" 
+                that pull the curve toward them without the curve actually passing through them.
+            </p>
+            
+            <h3>Types of Bezier Curves</h3>
+            <p>
+                <strong>Linear Bezier:</strong> A simple straight line between two points.<br>
+                <strong>Quadratic Bezier:</strong> Defined by three points - a start point, an end point, and one control point.<br>
+                <strong>Cubic Bezier:</strong> Defined by four points - a start point, an end point, and two control points.
+            </p>
+            
+            <h3>Mathematical Formula</h3>
+            <p>Bezier curves are parametric curves where the parameter <code>t</code> ranges from 0 to 1.</p>
+            
+            <h4>Quadratic Bezier Formula:</h4>
+            <div class="formula">
+                B(t) = (1-t)²P₀ + 2(1-t)tP₁ + t²P₂, where t ∈ [0,1]
+            </div>
+            <p>Where P₀ is the start point, P₁ is the control point, and P₂ is the end point.</p>
+            
+            <h4>Cubic Bezier Formula:</h4>
+            <div class="formula">
+                B(t) = (1-t)³P₀ + 3(1-t)²tP₁ + 3(1-t)t²P₂ + t³P₃, where t ∈ [0,1]
+            </div>
+            <p>Where P₀ is the start point, P₁ and P₂ are the control points, and P₃ is the end point.</p>
+            
+            <h3>Applications</h3>
+            <p>
+                Bezier curves are fundamental in:
+            </p>
+            <ul>
+                <li>Vector graphics and design software</li>
+                <li>Font design (TrueType, OpenType, etc.)</li>
+                <li>Animation (easing functions)</li>
+                <li>CAD/CAM systems</li>
+                <li>3D modeling</li>
+                <li>Game development (particle effects, character movement, projectile paths)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="module">
+        // Common Bezier calculation functions
+        const calculateQuadraticBezierPoint = (t, p0, p1, p2) => {
+            const x = (1 - t) * (1 - t) * p0.x + 2 * (1 - t) * t * p1.x + t * t * p2.x;
+            const y = (1 - t) * (1 - t) * p0.y + 2 * (1 - t) * t * p1.y + t * t * p2.y;
+            return { x, y };
+        };
+        
+        const calculateCubicBezierPoint = (t, p0, p1, p2, p3) => {
+            const mt = 1 - t;
+            const mt2 = mt * mt;
+            const mt3 = mt2 * mt;
+            const t2 = t * t;
+            const t3 = t2 * t;
+            
+            const x = mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x;
+            const y = mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y;
+            return { x, y };
+        };
+        
+        //==================== BEZIER DEMO CANVAS ====================//
+        // Get DOM elements
+        const canvas = document.getElementById('bezierCanvas');
+        const ctx = canvas.getContext('2d');
+        const animateBtn = document.getElementById('animateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const curveTypeSelect = document.getElementById('curveType');
+        
+        // Set canvas dimensions to match its display size
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = 400; // Fixed height
+        }
+        
+        // Initial setup for points
+        let points = [];
+        let selectedPoint = null;
+        let isAnimating = false;
+        let animationProgress = 0;
+        let animationSpeed = 0.005; // Animation speed (smaller is slower)
+        
+        function initPoints() {
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            if (curveTypeSelect.value === 'quadratic') {
+                points = [
+                    { x: w * 0.1, y: h * 0.7 }, // Start point P0
+                    { x: w * 0.5, y: h * 0.1 }, // Control point P1
+                    { x: w * 0.9, y: h * 0.7 }  // End point P2
+                ];
+            } else { // cubic
+                points = [
+                    { x: w * 0.1, y: h * 0.7 },  // Start point P0
+                    { x: w * 0.3, y: h * 0.1 },  // Control point P1
+                    { x: w * 0.7, y: h * 0.1 },  // Control point P2
+                    { x: w * 0.9, y: h * 0.7 }   // End point P3
+                ];
+            }
+            
+            animationProgress = 0;
+            draw();
+        }
+        
+        // Draw functions
+        function drawPoint(x, y, color, radius = 8) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawLine(p1, p2, color = 'rgba(128, 128, 128, 0.5)', width = 1) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+        
+        function drawConstructionLines(t) {
+            ctx.setLineDash([5, 3]); // Dashed line for construction
+            
+            if (curveTypeSelect.value === 'quadratic') {
+                // Linear interpolation between P0 and P1
+                const q0 = {
+                    x: (1 - t) * points[0].x + t * points[1].x,
+                    y: (1 - t) * points[0].y + t * points[1].y
+                };
+                
+                // Linear interpolation between P1 and P2
+                const q1 = {
+                    x: (1 - t) * points[1].x + t * points[2].x,
+                    y: (1 - t) * points[1].y + t * points[2].y
+                };
+                
+                // Draw construction lines
+                drawLine(points[0], points[1]);
+                drawLine(points[1], points[2]);
+                drawLine(q0, q1, 'rgba(128, 128, 128, 0.7)', 2);
+                
+                // Draw interpolation points
+                drawPoint(q0.x, q0.y, 'rgba(128, 128, 128, 0.8)', 5);
+                drawPoint(q1.x, q1.y, 'rgba(128, 128, 128, 0.8)', 5);
+                
+                // Draw current point on the curve
+                const curvePoint = calculateQuadraticBezierPoint(t, points[0], points[1], points[2]);
+                drawPoint(curvePoint.x, curvePoint.y, 'green', 6);
+            } else { // cubic
+                // Level 1 interpolations
+                const q0 = {
+                    x: (1 - t) * points[0].x + t * points[1].x,
+                    y: (1 - t) * points[0].y + t * points[1].y
+                };
+                
+                const q1 = {
+                    x: (1 - t) * points[1].x + t * points[2].x,
+                    y: (1 - t) * points[1].y + t * points[2].y
+                };
+                
+                const q2 = {
+                    x: (1 - t) * points[2].x + t * points[3].x,
+                    y: (1 - t) * points[2].y + t * points[3].y
+                };
+                
+                // Level 2 interpolations
+                const r0 = {
+                    x: (1 - t) * q0.x + t * q1.x,
+                    y: (1 - t) * q0.y + t * q1.y
+                };
+                
+                const r1 = {
+                    x: (1 - t) * q1.x + t * q2.x,
+                    y: (1 - t) * q1.y + t * q2.y
+                };
+                
+                // Final point on the curve
+                const curvePoint = {
+                    x: (1 - t) * r0.x + t * r1.x,
+                    y: (1 - t) * r0.y + t * r1.y
+                };
+                
+                // Draw base lines
+                drawLine(points[0], points[1]);
+                drawLine(points[1], points[2]);
+                drawLine(points[2], points[3]);
+                
+                // Draw level 1 points and lines
+                drawPoint(q0.x, q0.y, 'rgba(128, 128, 128, 0.8)', 5);
+                drawPoint(q1.x, q1.y, 'rgba(128, 128, 128, 0.8)', 5);
+                drawPoint(q2.x, q2.y, 'rgba(128, 128, 128, 0.8)', 5);
+                
+                drawLine(q0, q1, 'rgba(128, 128, 128, 0.7)', 2);
+                drawLine(q1, q2, 'rgba(128, 128, 128, 0.7)', 2);
+                
+                // Draw level 2 points and line
+                drawPoint(r0.x, r0.y, 'rgba(100, 100, 100, 0.9)', 5);
+                drawPoint(r1.x, r1.y, 'rgba(100, 100, 100, 0.9)', 5);
+                
+                drawLine(r0, r1, 'rgba(100, 100, 100, 0.9)', 2);
+                
+                // Draw current point on the curve
+                drawPoint(curvePoint.x, curvePoint.y, 'green', 6);
+            }
+            
+            ctx.setLineDash([]); // Reset to solid line
+        }
+        
+        function drawBezierCurve(progressLimit = 1) {
+            ctx.strokeStyle = 'green';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            const steps = 100;
+            const stepSize = progressLimit / steps;
+            
+            if (curveTypeSelect.value === 'quadratic') {
+                const startPoint = calculateQuadraticBezierPoint(0, points[0], points[1], points[2]);
+                ctx.moveTo(startPoint.x, startPoint.y);
+                
+                for (let i = 1; i <= steps; i++) {
+                    const t = Math.min(i * stepSize, progressLimit);
+                    const point = calculateQuadraticBezierPoint(t, points[0], points[1], points[2]);
+                    ctx.lineTo(point.x, point.y);
+                }
+            } else { // cubic
+                const startPoint = calculateCubicBezierPoint(0, points[0], points[1], points[2], points[3]);
+                ctx.moveTo(startPoint.x, startPoint.y);
+                
+                for (let i = 1; i <= steps; i++) {
+                    const t = Math.min(i * stepSize, progressLimit);
+                    const point = calculateCubicBezierPoint(t, points[0], points[1], points[2], points[3]);
+                    ctx.lineTo(point.x, point.y);
+                }
+            }
+            
+            ctx.stroke();
+        }
+        
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw construction lines if animating
+            if (isAnimating) {
+                drawConstructionLines(animationProgress);
+                drawBezierCurve(animationProgress);
+            } else {
+                drawBezierCurve();
+            }
+            
+            // Draw control polygon (connecting all points)
+            ctx.strokeStyle = 'rgba(128, 128, 128, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            
+            ctx.stroke();
+            
+            // Draw points
+            for (let i = 0; i < points.length; i++) {
+                // Different colors for different types of points
+                let color;
+                if (i === 0 || i === points.length - 1) {
+                    color = 'blue'; // Start and end points
+                } else {
+                    color = 'red'; // Control points
+                }
+                
+                drawPoint(points[i].x, points[i].y, color);
+            }
+        }
+        
+        // Event handlers for mouse interaction
+        function getMousePos(canvas, evt) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: evt.clientX - rect.left,
+                y: evt.clientY - rect.top
+            };
+        }
+        
+        function isPointInRadius(point, mousePos, radius = 10) {
+            const dx = point.x - mousePos.x;
+            const dy = point.y - mousePos.y;
+            return dx * dx + dy * dy < radius * radius;
+        }
+        
+        canvas.addEventListener('mousedown', (e) => {
+            if (isAnimating) return;
+            
+            const mousePos = getMousePos(canvas, e);
+            
+            // Check if we clicked on a point
+            for (let i = 0; i < points.length; i++) {
+                if (isPointInRadius(points[i], mousePos, 10)) {
+                    selectedPoint = i;
+                    return;
+                }
+            }
+            
+            selectedPoint = null;
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (selectedPoint !== null && !isAnimating) {
+                const mousePos = getMousePos(canvas, e);
+                points[selectedPoint].x = mousePos.x;
+                points[selectedPoint].y = mousePos.y;
+                draw();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            selectedPoint = null;
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            selectedPoint = null;
+        });
+        
+        // Animation functions
+        function animate() {
+            if (!isAnimating) return;
+            
+            animationProgress += animationSpeed;
+            
+            if (animationProgress >= 1) {
+                animationProgress = 1;
+                isAnimating = false;
+                animateBtn.textContent = 'Animate Drawing';
+                draw();
+                return;
+            }
+            
+            draw();
+            requestAnimationFrame(animate);
+        }
+        
+        // Event listeners for buttons
+        animateBtn.addEventListener('click', () => {
+            if (isAnimating) {
+                isAnimating = false;
+                animateBtn.textContent = 'Animate Drawing';
+            } else {
+                isAnimating = true;
+                animationProgress = 0;
+                animateBtn.textContent = 'Stop Animation';
+                animate();
+            }
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            isAnimating = false;
+            animateBtn.textContent = 'Animate Drawing';
+            initPoints();
+        });
+        
+        curveTypeSelect.addEventListener('change', () => {
+            isAnimating = false;
+            animateBtn.textContent = 'Animate Drawing';
+            initPoints();
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            initPoints();
+        });
+        
+        // Initial setup
+        resizeCanvas();
+        initPoints();
+        
+        //==================== GAME CANVAS: MAGIC MISSILE DEMO ====================//
+        const gameCanvas = document.getElementById('gameCanvas');
+        const gameCtx = gameCanvas.getContext('2d');
+        
+        // Set game canvas dimensions
+        function resizeGameCanvas() {
+            const rect = gameCanvas.getBoundingClientRect();
+            gameCanvas.width = rect.width;
+            gameCanvas.height = 300; // Fixed height
+        }
+        
+        // Configuration
+        const NUM_MISSILES = 6; // Number of magic missiles
+        const MISSILE_RADIUS = 5;
+        const PLAYER_RADIUS = 12;
+        const ENEMY_RADIUS = 15;
+        const MISSILE_SPEED_MULTIPLIER = 0.5; // Lower is slower
+        
+        // Game objects
+        const player = {
+            x: 0,
+            y: 0,
+            radius: PLAYER_RADIUS,
+            color: '#3498db' // Blue player
+        };
+        
+        const enemy = {
+            x: 0,
+            y: 0,
+            radius: ENEMY_RADIUS,
+            color: '#2ecc71' // Green orc
+        };
+        
+        // Control points for Bezier curve
+        let curveControlPoints = [];
+        
+        // Missiles array
+        let missiles = [];
+        
+        // Initialize game objects
+        function initGameObjects() {
+            const w = gameCanvas.width;
+            const h = gameCanvas.height;
+            
+            // Position player and enemy
+            player.x = w * 0.15;
+            player.y = h * 0.7;
+            
+            enemy.x = w * 0.85;
+            enemy.y = h * 0.7;
+            
+            // Create control points for cubic Bezier curve
+            curveControlPoints = [
+                { x: player.x, y: player.y }, // Start at player position
+                { x: w * 0.35, y: h * 0.2 },  // Control point 1
+                { x: w * 0.65, y: h * 0.2 },  // Control point 2
+                { x: enemy.x, y: enemy.y }     // End at enemy position
+            ];
+            
+            // Create missiles with staggered starts
+            missiles = [];
+            for (let i = 0; i < NUM_MISSILES; i++) {
+                missiles.push({
+                    progress: -i * 0.12,  // Stagger the missiles (-0.12, -0.24, -0.36, etc.)
+                    radius: MISSILE_RADIUS,
+                    color: '#e74c3c',     // Red missile
+                    x: player.x,
+                    y: player.y,
+                    active: true
+                });
+            }
+        }
+        
+        // Draw a circle with gradient/glow effect
+        function drawGlowingCircle(ctx, x, y, radius, color, glowSize = 5) {
+            // Create radial gradient
+            const gradient = ctx.createRadialGradient(
+                x, y, radius * 0.5,
+                x, y, radius + glowSize
+            );
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            
+            // Draw the circle
+            ctx.beginPath();
+            ctx.arc(x, y, radius + glowSize, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // Draw the solid center
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+        
+        // Draw game objects
+        function drawGameObjects() {
+            // Clear canvas
+            gameCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+            
+            // Draw Bezier curve path
+            gameCtx.strokeStyle = 'rgba(128, 128, 128, 0.3)';
+            gameCtx.lineWidth = 2;
+            gameCtx.beginPath();
+            gameCtx.moveTo(curveControlPoints[0].x, curveControlPoints[0].y);
+            
+            // Draw curve with many points for smoothness
+            const steps = 100;
+            for (let i = 1; i <= steps; i++) {
+                const t = i / steps;
+                const point = calculateCubicBezierPoint(
+                    t,
+                    curveControlPoints[0],
+                    curveControlPoints[1],
+                    curveControlPoints[2],
+                    curveControlPoints[3]
+                );
+                gameCtx.lineTo(point.x, point.y);
+            }
+            gameCtx.stroke();
+            
+            // Draw player (blue dot)
+            drawGlowingCircle(
+                gameCtx,
+                player.x,
+                player.y,
+                player.radius,
+                player.color,
+                8
+            );
+            
+            // Draw enemy (green dot)
+            drawGlowingCircle(
+                gameCtx,
+                enemy.x,
+                enemy.y,
+                enemy.radius,
+                enemy.color,
+                10
+            );
+            
+            // Draw missiles
+            missiles.forEach(missile => {
+                if (missile.progress >= 0 && missile.progress <= 1) {
+                    drawGlowingCircle(
+                        gameCtx,
+                        missile.x,
+                        missile.y,
+                        missile.radius,
+                        missile.color,
+                        7
+                    );
+                    
+                    // Draw missile trail
+                    gameCtx.beginPath();
+                    gameCtx.moveTo(missile.x, missile.y);
+                    
+                    // Trail points go backwards on the curve
+                    const trailLength = 0.1; // Length of trail
+                    const trailSteps = 15;   // Number of trail segments
+                    
+                    for (let i = 1; i <= trailSteps; i++) {
+                        const trailProgress = Math.max(0, missile.progress - (i / trailSteps) * trailLength);
+                        if (trailProgress <= 0) break;
+                        
+                        const point = calculateCubicBezierPoint(
+                            trailProgress,
+                            curveControlPoints[0],
+                            curveControlPoints[1],
+                            curveControlPoints[2],
+                            curveControlPoints[3]
+                        );
+                        gameCtx.lineTo(point.x, point.y);
+                    }
+                    
+                    // Create trail gradient
+                    const gradient = gameCtx.createLinearGradient(
+                        missile.x, missile.y,
+                        curveControlPoints[0].x, curveControlPoints[0].y
+                    );
+                    gradient.addColorStop(0, missile.color);
+                    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    
+                    gameCtx.strokeStyle = gradient;
+                    gameCtx.lineWidth = missile.radius;
+                    gameCtx.lineCap = 'round';
+                    gameCtx.stroke();
+                }
+            });
+        }
+        
+        // Update game state
+        function updateGameState() {
+            // Update missile positions
+            missiles.forEach(missile => {
+                missile.progress += 0.005 * MISSILE_SPEED_MULTIPLIER;
+                
+                // Loop the missile when it reaches the end
+                if (missile.progress > 1.2) {
+                    missile.progress = -0.2;
+                }
+                
+                // Calculate position on the curve if in range
+                if (missile.progress >= 0 && missile.progress <= 1) {
+                    const point = calculateCubicBezierPoint(
+                        missile.progress,
+                        curveControlPoints[0],
+                        curveControlPoints[1],
+                        curveControlPoints[2],
+                        curveControlPoints[3]
+                    );
+                    missile.x = point.x;
+                    missile.y = point.y;
+                }
+            });
+        }
+        
+        // Game animation loop
+        function gameLoop() {
+            updateGameState();
+            drawGameObjects();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Initialize and start game
+        function initGame() {
+            resizeGameCanvas();
+            initGameObjects();
+            gameLoop();
+        }
+        
+        // Handle window resize for game canvas
+        window.addEventListener('resize', () => {
+            resizeGameCanvas();
+            initGameObjects();
+        });
+        
+        // Initialize game on load
+        initGame();
+    </script>
+</body>
+</html>
